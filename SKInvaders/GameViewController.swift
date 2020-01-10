@@ -41,9 +41,9 @@ class GameViewController: UIViewController {
     skView.presentScene(scene)
     
     // Pause the view (and thus the game) when the app is interrupted or backgrounded
-    NotificationCenter.default.addObserver(self, selector: #selector(GameViewController.handleApplicationWillResignActive(_:)), name: NSNotification.Name.UIApplicationWillResignActive, object: nil)
+//    NotificationCenter.default.addObserver(self, selector: #selector(GameViewController.handleApplicationWillResignActive(_:)), name: NSNotification.Name.UIApplication.willResignActiveNotification, object: nil)
     
-    NotificationCenter.default.addObserver(self, selector: #selector(GameViewController.handleApplicationDidBecomeActive(_:)), name: NSNotification.Name.UIApplicationDidBecomeActive, object: nil)
+//    NotificationCenter.default.addObserver(self, selector: #selector(GameViewController.handleApplicationDidBecomeActive(_:)), name: NSNotification.Name.UIApplication.didBecomeActiveNotification, object: nil)
   }
   
   override var prefersStatusBarHidden: Bool {
@@ -63,12 +63,12 @@ class GameViewController: UIViewController {
     // Release any cached data, images, etc that aren't in use.
   }
   
-  func handleApplicationWillResignActive (_ note: Notification) {
+  @objc func handleApplicationWillResignActive (_ note: Notification) {
     let skView = self.view as! SKView
     skView.isPaused = true
   }
   
-  func handleApplicationDidBecomeActive (_ note: Notification) {
+  @objc func handleApplicationDidBecomeActive (_ note: Notification) {
     let skView = self.view as! SKView
     skView.isPaused = false
   }
