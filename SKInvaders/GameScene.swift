@@ -36,6 +36,15 @@ class GameScene: SKScene {
     
     var contentCreated = false
     
+    // Invaders begin by moving to the right.
+    var invaderMovementDirection: InvaderMovementDirection = .right
+    
+    // Invaders haven't moved yet, so set the time to zero.
+    var timeOfLastMove: CFTimeInterval = 0.0
+    
+    // Invaders take 1 second for each move. Each step left, right or down takes 1 second.
+    let timePerMove: CFTimeInterval = 1.0
+    
     enum InvaderType {
         case a
         case b
@@ -67,7 +76,7 @@ class GameScene: SKScene {
     // Scene Setup and Content Creation
     override func didMove(to view: SKView) {
         
-        if (!self.contentCreated) {
+        if (self.contentCreated == false) {
             self.createContent()
             self.contentCreated = true
         }
@@ -192,14 +201,85 @@ class GameScene: SKScene {
     }
     
     // Scene Update
+    func moveInvaders(forUpdate currentTime: CFTimeInterval) {
+        // 1
+        if (currentTime - timeOfLastMove < timePerMove) {
+            return
+        }
+        
+        // 2
+        enumerateChildNodes(withName: InvaderType.name) { node, stop in
+            switch self.invaderMovementDirection {
+            case .right:
+                node.position = CGPoint(x: node.position.x + 10, y: node.position.y)
+            case .left:
+                node.position = CGPoint(x: node.position.x - 10, y: node.position.y)
+            case .downThenLeft, .downThenRight:
+                node.position = CGPoint(x: node.position.x, y: node.position.y - 10)
+            case .none:
+                break
+            }
+            
+            // 3
+            self.timeOfLastMove = currentTime
+        }
+    }
     
     override func update(_ currentTime: TimeInterval) {
+        // move invaders
+        moveInvaders(forUpdate: currentTime)
+        determineInvaderMovementDirection()
         /* Called before each frame is rendered */
     }
     
     // Scene Update Helpers
     
     // Invader Movement Helpers
+    
+    func determineInvaderMovementDirection() {
+        // 1
+        var proposedMovementDirection: InvaderMovementDirection = invaderMovementDirection
+        
+        // 2
+        enumerateChildNodes(withName: InvaderType.name) { node, stop in
+            
+            switch self.invaderMovementDirection {
+            case .right:
+                //3
+                if (node.frame.maxX >= node.scene!.size.width - 1.0) {
+                    proposedMovementDirection = .downThenLeft
+                    
+                    stop.pointee = true
+                }
+            case .left:
+                //4
+                if (node.frame.minX <= 1.0) {
+                    proposedMovementDirection = .downThenRight
+                    
+                    stop.pointee = true
+                }
+                
+            case .downThenLeft:
+                proposedMovementDirection = .left
+                
+                stop.pointee = true
+                
+            case .downThenRight:
+                proposedMovementDirection = .right
+                
+                stop.pointee = true
+                
+            default:
+                break
+            }
+            
+        }
+        
+        //7
+        if (proposedMovementDirection != invaderMovementDirection) {
+            invaderMovementDirection = proposedMovementDirection
+        }
+    }
     
     // Bullet Helpers
     
