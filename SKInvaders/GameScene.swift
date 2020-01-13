@@ -23,6 +23,8 @@
 import SpriteKit
 import CoreMotion
 
+let motionManager = CMMotionManager()
+
 class GameScene: SKScene {
     
     // Private GameScene Properties
@@ -79,6 +81,7 @@ class GameScene: SKScene {
         if (self.contentCreated == false) {
             self.createContent()
             self.contentCreated = true
+            motionManager.startAccelerometerUpdates()
         }
     }
     
@@ -163,6 +166,17 @@ class GameScene: SKScene {
     func makeShip() -> SKNode {
         let ship = SKSpriteNode(color: SKColor.green, size: kShipSize)
         ship.name = kShipName
+        // 1
+        ship.physicsBody = SKPhysicsBody(rectangleOf: ship.frame.size)
+        
+        // 2
+        ship.physicsBody!.isDynamic = true
+        
+        // 3
+        ship.physicsBody!.affectedByGravity = false
+        
+        // 4
+        ship.physicsBody!.mass = 0.02
         return ship
     }
     
@@ -202,6 +216,7 @@ class GameScene: SKScene {
     
     // Scene Update
     func moveInvaders(forUpdate currentTime: CFTimeInterval) {
+        processUserMotion(forUpdate: currentTime)
         // 1
         if (currentTime - timeOfLastMove < timePerMove) {
             return
@@ -222,6 +237,19 @@ class GameScene: SKScene {
             
             // 3
             self.timeOfLastMove = currentTime
+        }
+    }
+    
+    func processUserMotion(forUpdate currentTime: CFTimeInterval) {
+        // 1
+        if let ship = childNode(withName: kShipName) as? SKSpriteNode {
+            // 2
+            if let data = motionManager.accelerometerData {
+                // 3
+                if fabs(data.acceleration.x) > 0.2 {
+                    // 4 How do you move the ship?
+                    ship.physicsBody!.applyForce(CGVector(dx: 40 * CGFloat(data.acceleration.x), dy: 0))                }
+            }
         }
     }
     
