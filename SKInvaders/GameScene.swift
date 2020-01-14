@@ -24,8 +24,14 @@ import SpriteKit
 import CoreMotion
 
 let motionManager = CMMotionManager()
+var tapQueue = [Int]()
 
 class GameScene: SKScene {
+    
+    enum BulletType {
+        case shipFired
+        case invaderFired
+    }
     
     // Private GameScene Properties
     enum InvaderMovementDirection {
@@ -72,6 +78,10 @@ class GameScene: SKScene {
     let kScoreHudName = "scoreHud"
     // saúde
     let kHealthHudName = "healthHud"
+    
+    let kShipFiredBulletName = "shipFiredBullet"
+    let kInvaderFiredBulletName = "invaderFiredBullet"
+    let kBulletSize = CGSize(width:4, height: 8)
     
     // Object Lifecycle Management
     
@@ -214,6 +224,22 @@ class GameScene: SKScene {
         addChild(healthLabel)
     }
     
+    func makeBullet(ofType bulletType: BulletType) -> SKNode {
+        var bullet: SKNode
+        
+        switch bulletType {
+        case .shipFired:
+            bullet = SKSpriteNode(color: SKColor.green, size: kBulletSize)
+            bullet.name = kShipFiredBulletName
+        case .invaderFired:
+            bullet = SKSpriteNode(color: SKColor.magenta, size: kBulletSize)
+            bullet.name = kInvaderFiredBulletName
+            break
+        }
+        
+        return bullet
+    }
+    
     // Scene Update
     func moveInvaders(forUpdate currentTime: CFTimeInterval) {
         processUserMotion(forUpdate: currentTime)
@@ -310,8 +336,60 @@ class GameScene: SKScene {
     }
     
     // Bullet Helpers
+    func fireBullet(bullet: SKNode, toDestination destination: CGPoint, withDuration duration: CFTimeInterval, andSoundFileName soundName: String) {
+        // 1
+        let bulletAction = SKAction.sequence([
+            SKAction.move(to: destination, duration: duration),
+            SKAction.wait(forDuration: 3.0 / 60.0),
+            SKAction.removeFromParent()
+        ])
+        
+        // 2
+        let soundAction = SKAction.playSoundFileNamed(soundName, waitForCompletion: true)
+        
+        // 3
+        bullet.run(SKAction.group([bulletAction, soundAction]))
+        
+        // 4
+        addChild(bullet)
+    }
+    
+    func fireShipBullets() {
+        let existingBullet = childNode(withName: kShipFiredBulletName)
+        
+        // 1
+        if existingBullet == nil {
+            if let ship = childNode(withName: kShipName) {
+                let bullet = makeBullet(ofType: .shipFired)
+                // 2
+                bullet.position = CGPoint(
+                    x: ship.position.x,
+                    y: ship.position.y + ship.frame.size.height - bullet.frame.size.height / 2
+                )
+                // 3
+                let bulletDestination = CGPoint(
+                    x: ship.position.x,
+                    y: frame.size.height + bullet.frame.size.height / 2
+                )
+                // 4
+                fireBullet(
+                    bullet: bullet,
+                    toDestination: bulletDestination,
+                    withDuration: 1.0,
+                    andSoundFileName: "ShipBullet.wav"
+                )
+            }
+        }
+    }
     
     // User Tap Helpers
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let touch = touches.first {
+            if (touch.tapCount == 1) {
+                tapQueue.append(1)
+            }
+        }
+    }
     
     // HUD Helpers
     
